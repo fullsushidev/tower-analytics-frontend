@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { FunctionComponent } from 'react';
 import {
   EmptyState,
   EmptyStateBody,
@@ -9,8 +8,13 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { global_danger_color_200 as globalDangerColor200 } from '@patternfly/react-tokens';
+import { FailResponseTypes } from '../Api';
 
-const ApiErrorState = ({ message }) => (
+interface Props {
+  error: FailResponseTypes;
+}
+
+const ApiErrorState: FunctionComponent<Props> = ({ error }) => (
   <EmptyState variant={EmptyStateVariant.small}>
     <EmptyStateIcon
       icon={ExclamationCircleIcon}
@@ -19,12 +23,8 @@ const ApiErrorState = ({ message }) => (
     <Title headingLevel="h2" size="lg">
       Error
     </Title>
-    <EmptyStateBody>{message}</EmptyStateBody>
+    <EmptyStateBody>{error.detail?.map((el) => el.msg)}</EmptyStateBody>
   </EmptyState>
 );
-
-ApiErrorState.propTypes = {
-  message: PropTypes.string,
-};
 
 export default ApiErrorState;

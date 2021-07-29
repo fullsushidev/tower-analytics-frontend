@@ -194,7 +194,7 @@ const Templates = ({ template_id, dispatch: formDispatch }) => {
                         key={`template-detail-${id}-radio-td`}
                         select={{
                           rowIndex: id,
-                          onSelect: (event, isSelected, value) =>
+                          onSelect: (_event, _isSelected, value) =>
                             formDispatch({
                               type: actions.SET_TEMPLATE_ID,
                               value,

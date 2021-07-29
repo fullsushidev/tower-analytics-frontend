@@ -1,5 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, FunctionComponent } from 'react';
 
 import { useQueryParams } from '../../Utilities/useQueryParams';
 import useRequest from '../../Utilities/useRequest';
@@ -12,9 +11,11 @@ import Pagination from '../../Components/Pagination';
 
 import {
   preflightRequest,
+  QueryFilter,
+  QueryParams,
   readJobExplorer,
   readJobExplorerOptions,
-} from '../../Api/';
+} from '../../Api';
 import { jobExplorer } from '../../Utilities/constants';
 
 import Main from '@redhat-cloud-services/frontend-components/Main';
@@ -26,8 +27,14 @@ import {
 import { Card, CardBody, PaginationVariant } from '@patternfly/react-core';
 
 import JobExplorerList from '../../Components/JobExplorerList';
-import FilterableToolbar from '../../Components/Toolbar/';
+import FilterableToolbar from '../../Components/Toolbar';
 import { getQSConfig } from '../../Utilities/qs';
+
+const optionDefaultValue = {};
+const jobExplorerDefaultValue = {
+  items: [],
+  meta: { count: 0, counts: {}, legend: [] },
+};
 
 const initialQueryParams = {
   ...jobExplorer.defaultParams,
@@ -38,9 +45,10 @@ const qsConfig = getQSConfig('job-explorer', { ...initialQueryParams }, [
   'offset',
 ]);
 
-const JobExplorer = () => {
+const JobExplorer: FunctionComponent<Record<string, never>> = () => {
   const { error: preflightError, request: setPreflight } = useRequest(
-    useCallback(() => preflightRequest(), [])
+    preflightRequest,
+    {}
   );
 
   const {
@@ -48,39 +56,32 @@ const JobExplorer = () => {
     setFromPagination,
     setFromToolbar,
     dispatch: queryParamsDispatch,
-  } = useQueryParams(qsConfig);
+  } = useQueryParams<QueryFilter>(qsConfig);
 
   const {
     result: options,
     error,
     request: fetchOptions,
-  } = useRequest(
-    useCallback(() => readJobExplorerOptions(queryParams), [queryParams]),
-    {}
-  );
+  } = useRequest(readJobExplorerOptions, optionDefaultValue);
 
   const {
-    result: { items: data, meta },
+    result: { items, meta },
     isLoading: dataIsLoading,
     isSuccess: dataIsSuccess,
     request: fetchEndpoints,
-  } = useRequest(
-    useCallback(() => readJobExplorer(queryParams), [queryParams]),
-    { items: [], meta: {} }
-  );
+  } = useRequest(readJobExplorer, jobExplorerDefaultValue);
 
   useEffect(() => {
-    insights.chrome.appNavClick({ id: 'job-explorer', secondaryNav: true });
     setPreflight();
   }, []);
 
   useEffect(() => {
-    fetchOptions();
-    fetchEndpoints();
+    fetchOptions(queryParams);
+    fetchEndpoints(queryParams);
   }, [queryParams]);
 
   if (preflightError) return <EmptyState preflightError={preflightError} />;
-  if (error) return <ApiErrorState message={error.error} />;
+  if (error) return <ApiErrorState error={error} />;
 
   return (
     <React.Fragment>
@@ -101,10 +102,10 @@ const JobExplorer = () => {
                   <Pagination
                     count={meta?.count}
                     params={{
-                      limit: parseInt(queryParams.limit),
-                      offset: parseInt(queryParams.offset),
+                      limit: queryParams.limit,
+                      offset: queryParams.offset,
                     }}
-                    qsConfig={qsConfig}
+                    qsConfig={qsConfig as QueryParams}
                     setPagination={setFromPagination}
                     isCompact
                   />
@@ -112,10 +113,10 @@ const JobExplorer = () => {
                 hasSettings
               />
               {dataIsLoading && <LoadingState />}
-              {dataIsSuccess && data.length <= 0 && <NoResults />}
-              {dataIsSuccess && data.length > 0 && (
+              {dataIsSuccess && items && items.length <= 0 && <NoResults />}
+              {dataIsSuccess && items && items.length > 0 && (
                 <JobExplorerList
-                  jobs={data}
+                  jobs={items}
                   queryParams={queryParams}
                   queryParamsDispatch={queryParamsDispatch}
                 />
@@ -123,10 +124,10 @@ const JobExplorer = () => {
               <Pagination
                 count={meta?.count}
                 params={{
-                  limit: parseInt(queryParams.limit),
-                  offset: parseInt(queryParams.offset),
+                  limit: queryParams.limit,
+                  offset: queryParams.offset,
                 }}
-                qsConfig={qsConfig}
+                qsConfig={qsConfig as QueryParams}
                 setPagination={setFromPagination}
                 variant={PaginationVariant.bottom}
               />
@@ -136,11 +137,6 @@ const JobExplorer = () => {
       )}
     </React.Fragment>
   );
-};
-
-JobExplorer.propTypes = {
-  location: PropTypes.object,
-  history: PropTypes.object,
 };
 
 export default JobExplorer;

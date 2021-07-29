@@ -1,11 +1,11 @@
 import React, { FunctionComponent } from 'react';
-import PropTypes from 'prop-types';
 import { Pagination as PFPagination } from '@patternfly/react-core';
 import {
   encodeNonDefaultQueryString,
   parseQueryString,
 } from '../../Utilities/qs';
 import { useHistory } from 'react-router-dom';
+import { QueryParams } from '../../Api';
 
 const perPageOptions = [
   { title: '5', value: 5 },
@@ -16,19 +16,15 @@ const perPageOptions = [
 ];
 
 type SetPagination = (offset: number, limit?: number) => void;
-type ApiParams = Record<
-  string,
-  string | boolean | number | string[] | number[]
->;
 
 interface Props {
   count?: number;
   params: {
-    offset: number;
-    limit: number;
+    offset?: number;
+    limit?: number;
   };
   setPagination: SetPagination;
-  qsConfig: ApiParams;
+  qsConfig: QueryParams;
   [x: string]: unknown;
 }
 
@@ -39,7 +35,7 @@ const Pagination: FunctionComponent<Props> = ({
   setPagination,
   ...props
 }) => {
-  const { offset, limit } = params;
+  const { offset = 0, limit = 0 } = params;
   const currentPage = Math.floor(offset / limit + 1);
   const returnOffsetVal = (page: number) => (page - 1) * limit;
   const history = useHistory();
@@ -89,16 +85,6 @@ const Pagination: FunctionComponent<Props> = ({
       {...props}
     />
   );
-};
-
-Pagination.propTypes = {
-  count: PropTypes.number,
-  qsConfig: PropTypes.any,
-  params: PropTypes.exact({
-    offset: PropTypes.number.isRequired,
-    limit: PropTypes.number.isRequired,
-  }).isRequired,
-  setPagination: PropTypes.func.isRequired,
 };
 
 export default Pagination;

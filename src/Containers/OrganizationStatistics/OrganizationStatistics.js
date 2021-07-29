@@ -152,10 +152,7 @@ const OrganizationStatistics = ({ history }) => {
     isSuccess: jobsIsSuccess,
     request: setJobs,
   } = useRequest(
-    useCallback(
-      async () => readJobExplorer(jobRunsByOrgParams),
-      [jobRunsByOrgParams]
-    ),
+    useCallback(readJobExplorer(jobRunsByOrgParams), [jobRunsByOrgParams]),
     []
   );
 
@@ -193,10 +190,7 @@ const OrganizationStatistics = ({ history }) => {
     isSuccess: tasksIsSuccess,
     request: setTasks,
   } = useRequest(
-    useCallback(
-      async () => readJobExplorer(jobEventsByOrgParams),
-      [jobEventsByOrgParams]
-    ),
+    useCallback(readJobExplorer(jobEventsByOrgParams), [jobEventsByOrgParams]),
     []
   );
 

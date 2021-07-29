@@ -1,11 +1,15 @@
+/* eslint-disable */
+// @ts-nocheck
 import { useReducer } from 'react';
 import moment from 'moment';
 import { useHistory } from 'react-router-dom';
 
-import { formatDate } from '../Utilities/helpers';
+import { formatDate } from './helpers';
 import { parseQueryString } from './qs';
 
-export const useQueryParams = (initial) => {
+export const useQueryParams = <T>(
+  initial: any
+) => {
   const history = useHistory();
 
   const initialParams = {
@@ -136,7 +140,7 @@ export const useQueryParams = (initial) => {
   };
 
   return {
-    queryParams,
+    queryParams: queryParams as T,
     dispatch,
     setFromToolbar: (varName, value = null) => {
       if (!varName) {
@@ -145,7 +149,7 @@ export const useQueryParams = (initial) => {
         dispatch({ type: actionMapper[varName], value: { [varName]: value } });
       }
     },
-    setFromPagination: (offset, limit = null) => {
+    setFromPagination: (offset: number, limit = undefined as number): void => {
       dispatch({ type: 'SET_OFFSET', value: offset });
       if (limit) {
         dispatch({ type: 'SET_LIMIT', value: limit });

@@ -1,5 +1,12 @@
 import { stringify } from 'query-string';
-import { ApiJson, Params, ParamsWithPagination } from './types';
+import {
+  ResponseTypes,
+  Params,
+  QueryParams,
+  SuccessResponseTypes,
+  FailResponseTypes,
+  RequestTypes,
+} from './types';
 
 declare global {
   interface Window {
@@ -13,25 +20,11 @@ declare global {
   }
 }
 
-const handleResponse = (response: Response): Promise<ApiJson> => {
-  return response.json().then((json: ApiJson) => {
-    if (response.ok) {
-      return json;
-    }
-
-    if (response.status === 404 || response.status === 401) {
-      return Promise.reject({
-        status: response.status,
-        message: json,
-      });
-    } else if (response.status === 403) {
-      return Promise.reject({
-        status: response.status,
-        error: 'RBAC access denied',
-      });
-    } else {
-      return Promise.reject(json);
-    }
+const handleResponse = (response: Response): Promise<ResponseTypes> => {
+  return response.json().then((json: ResponseTypes) => {
+    return response.ok
+      ? Promise.resolve(json as SuccessResponseTypes)
+      : Promise.reject(json as FailResponseTypes);
   });
 };
 
@@ -39,12 +32,19 @@ export const authenticatedFetch = (
   endpoint: RequestInfo,
   options = {}
 ): Promise<Response> =>
-  window.insights.chrome.auth.getUser().then(() => fetch(endpoint, options));
+  window.insights.chrome.auth.getUser().then(() =>
+    fetch(endpoint, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+  );
 
 export const get = (
   endpoint: string,
   params: Params = {}
-): Promise<ApiJson> => {
+): Promise<ResponseTypes> => {
   const url = new URL(endpoint, window.location.origin);
   url.search = stringify(params);
 
@@ -53,10 +53,11 @@ export const get = (
   }).then(handleResponse);
 };
 
-export const post = (
+export const post = <T extends RequestTypes>(
   endpoint: string,
-  params: Params = {}
-): Promise<ApiJson> => {
+  // TODO Remove QueryParams from the next line
+  params: T['query'] | QueryParams = {}
+): Promise<T['promise']> => {
   const url = new URL(endpoint, window.location.origin);
   return authenticatedFetch(url.toString(), {
     method: 'POST',
@@ -64,10 +65,11 @@ export const post = (
   }).then(handleResponse);
 };
 
-export const postWithPagination = (
+export const postWithPagination = <T extends RequestTypes>(
   endpoint: string,
-  params: ParamsWithPagination = {}
-): Promise<ApiJson> => {
+  // TODO Remove QueryParams from the next line
+  params: T['query'] | QueryParams = {}
+): Promise<T['promise']> => {
   const { limit, offset, sort_by } = params;
 
   const url = new URL(endpoint, window.location.origin);
@@ -83,7 +85,10 @@ export const postWithPagination = (
   }).then(handleResponse);
 };
 
-export const deleteById = (endpoint: string, id: string): Promise<ApiJson> => {
+export const deleteById = (
+  endpoint: string,
+  id: string
+): Promise<ResponseTypes> => {
   const url = new URL(endpoint + id, window.location.origin);
   return authenticatedFetch(url.toString(), {
     method: 'DELETE',
@@ -94,7 +99,7 @@ export const updateById = (
   endpoint: string,
   id: string,
   params: Params = {}
-): Promise<ApiJson> => {
+): Promise<ResponseTypes> => {
   const url = new URL(endpoint + id, window.location.origin);
   return authenticatedFetch(url.toString(), {
     method: 'PUT',
